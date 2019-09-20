@@ -1,0 +1,33 @@
+sudo: required
+dist: trusty
+language: node_js
+node_js:
+  - 11.15.0
+env:
+  global:
+    - BUILD_NAME=<prefix for PR build (optional, fallback to repo name)>
+    - BUILD_DIR=dist
+    - TARGET_NAME=target/from/root
+    - TARGET_DIR=/some/full/path/$TARGET_NAME
+    - SFTP_SITE_URL=mysftpsite.com
+    - SFTP_SITE_IP=192.168.1.1
+    - SFTP_USER=josef
+    - SFTP_PASSWORD=<secure>
+addons:
+  ssh_known_hosts: 9.9.149.244
+  apt:
+    packages:
+      - sshpass
+script:
+  - if [ $TRAVIS_PULL_REQUEST != "false" ]; then
+      node ./scripts/pullrequest.js;
+    fi
+deploy:
+  - provider: script
+    name: Production Deployment
+    script: sshpass -p "$SFTP_PASSWORD" rsync -avz --chmod=775 src/ $SFTP_USER@$SFTP_SITE_IP:$TARGET_DIR
+    skip_cleanup: true
+    on:
+      branches: 
+        only:
+          - master
